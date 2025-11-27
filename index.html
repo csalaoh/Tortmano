@@ -2,7 +2,8 @@
 <html lang="hu">
     <head>
         <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <title>Törtmanó</title>
         <style>
         body {
@@ -143,10 +144,15 @@
 
             <div id="start-screen">
                 <h2>Szia! Hogy hívnak?</h2>
-                <p>A gyakorlás végén az eredményedet automatikusan elküldjük a tanárnak.</p>
-                <form id="login-form" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
-                    <input type="text" id="name-input" placeholder="Írd ide a neved..." enterkeyhint="go" required>
-                    <button type="submit" class="btn-start">Indulhat a gyakorlás!</button>
+                <p>A gyakorlás végén az eredményedet automatikusan elküldjük a
+                    tanárnak.</p>
+                <form id="login-form"
+                    style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+                    <input type="text" id="name-input"
+                        placeholder="Írd ide a neved..." enterkeyhint="go"
+                        required>
+                    <button type="submit" class="btn-start">Indulhat a
+                        gyakorlás!</button>
                 </form>
             </div>
 
@@ -167,11 +173,16 @@
                         <div class="setting-item">
                             <label>Feladat típusa:</label>
                             <select id="op-mode" onchange="gameReset()">
-                                <option value="1">1. Összeadás / Kivonás</option>
-                                <option value="2">2. Szorzás / Osztás (Egésszel)</option>
-                                <option value="3">3. Szorzás (Tört · Tört)</option>
-                                <option value="4">4. Osztás (Tört : Tört)</option>
-                                <option value="5" selected>5. Vegyes (Minden)</option>
+                                <option value="1">1. Összeadás /
+                                    Kivonás</option>
+                                <option value="2">2. Szorzás / Osztás
+                                    (Egésszel)</option>
+                                <option value="3">3. Szorzás (Tört ·
+                                    Tört)</option>
+                                <option value="4">4. Osztás (Tört :
+                                    Tört)</option>
+                                <option value="5" selected>5. Vegyes
+                                    (Minden)</option>
                             </select>
                         </div>
                         <div class="setting-item">
@@ -204,7 +215,8 @@
                 <div class="problem-container" id="problem-box"></div>
 
                 <div id="help-container">
-                    <h3 style="color:#f57f17; margin-top:0;">💡 Segítség a Törtmanótól</h3>
+                    <h3 style="color:#f57f17; margin-top:0;">💡 Segítség a
+                        Törtmanótól</h3>
                     <div id="help-content-area"></div>
                     <div id="help-controls" style="margin-top:10px;"></div>
                 </div>
@@ -234,10 +246,11 @@
 
             <div id="report-screen">
                 <h2>📊 Gyakorlási Jelentés</h2>
-                
+
                 <div id="status-message"></div>
 
-                <button id="btn-send-data" class="btn-send" onclick="sendReportToGoogle()">
+                <button id="btn-send-data" class="btn-send"
+                    onclick="sendReportToGoogle()">
                     🚀 Eredmény küldése a Tanárnak
                 </button>
 
@@ -245,10 +258,13 @@
                     Ha a küldés nem sikerülne, itt a biztonsági másolat:
                 </p>
                 <textarea id="report-output" readonly rows="10"></textarea>
-                
+
                 <div class="report-buttons">
-                    <button onclick="copyReport()" style="background-color:#555; color:white; font-size:0.9em;">Másolás vágólapra (Tartalék)</button>
-                    <button onclick="window.location.reload()" style="background-color:#ff9800; color:white;">Újrakezdés</button>
+                    <button onclick="copyReport()"
+                        style="background-color:#555; color:white; font-size:0.9em;">Másolás
+                        vágólapra (Tartalék)</button>
+                    <button onclick="window.location.reload()"
+                        style="background-color:#ff9800; color:white;">Újrakezdés</button>
                 </div>
             </div>
         </div>
@@ -651,7 +667,9 @@
             btnSend.style.display = 'block';
             
             // Ha nincs beállítva URL, jelezzük
-            if(GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbymo37p92s9saK9CX7QSr-heJFpsVuJ0xxuV3aCLDZdRr1nahmDwVr-gFJ9DI94uzH2lw/exec") {
+            // JAVÍTOTT VERZIÓ:
+            // Csak akkor szóljon, ha az eredeti szöveg maradt ott, vagy üres
+            if(GOOGLE_SCRIPT_URL === "IDE_MASOLD_BE_A_GOOGLE_SCRIPT_LINKET" || GOOGLE_SCRIPT_URL === "") {
                 document.getElementById('status-message').innerHTML = "⚠️ Nincs beállítva a tanári link! Használd a másolást.";
                 document.getElementById('status-message').style.color = "red";
                 btnSend.style.display = 'none';
