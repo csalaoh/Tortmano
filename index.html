@@ -3,7 +3,7 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>Törtmanó</title>
+        <title>Törtmanó 16.0 - Automata Küldéssel</title>
         <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -117,6 +117,11 @@
         .btn-help-continue { background-color: #8bc34a; color: white; }
         .btn-help-more { background-color: #03a9f4; color: white; }
 
+        /* ÚJ: KÜLDÉS GOMB STÍLUS */
+        .btn-send { background-color: #2196F3; color: white; width: 100%; margin-top:15px; font-size: 1.2em; display: none; }
+        .loading-spinner { display: inline-block; width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; margin-right: 10px; vertical-align: middle; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
         #feedback { margin-top: 20px; font-size: 1.1em; font-weight: bold; min-height: 30px; padding: 10px; border-radius: 8px; }
         .correct { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
         .incorrect { background-color: #ffebee; color: #c62828; }
@@ -126,17 +131,19 @@
         .report-buttons button { padding: 15px 30px; font-size: 1.2em; }
         
         input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        
+        #status-message { margin-top: 15px; font-weight: bold; min-height: 1.5em; }
     </style>
     </head>
     <body>
 
-        <h1>🦊 Törtmanó - műveletek gyakorlása</h1>
+        <h1>🦊 Törtmanó 16.0</h1>
 
         <div class="container">
 
             <div id="start-screen">
                 <h2>Szia! Hogy hívnak?</h2>
-                <p>A gyakorlás végén egy jelentést kapsz, amit el kell küldened nekem.</p>
+                <p>A gyakorlás végén az eredményedet automatikusan elküldjük a tanárnak.</p>
                 <form id="login-form" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
                     <input type="text" id="name-input" placeholder="Írd ide a neved..." enterkeyhint="go" required>
                     <button type="submit" class="btn-start">Indulhat a gyakorlás!</button>
@@ -152,7 +159,7 @@
                         Szint: <span id="level-text">1. Kezdő</span>
                     </div>
                     <button class="btn-finish" onclick="finishSession()">📄
-                        Befejezés és Jelentés</button>
+                        Befejezés és Küldés</button>
                 </div>
 
                 <div class="settings-box">
@@ -227,22 +234,32 @@
 
             <div id="report-screen">
                 <h2>📊 Gyakorlási Jelentés</h2>
-                <p
-                    style="font-size: 1.1em; font-weight: bold; color: #d32f2f;">Kérlek
-                    másold ki a teljes szöveget, és illeszd be egy a Teams-ben
-                    egy privát csevegésbe, és küld el nekem.</p>
-                <textarea id="report-output" readonly rows="20"></textarea>
+                
+                <div id="status-message"></div>
+
+                <button id="btn-send-data" class="btn-send" onclick="sendReportToGoogle()">
+                    🚀 Eredmény küldése a Tanárnak
+                </button>
+
+                <p style="margin-top:20px; font-size:0.9em; color:#666;">
+                    Ha a küldés nem sikerülne, itt a biztonsági másolat:
+                </p>
+                <textarea id="report-output" readonly rows="10"></textarea>
+                
                 <div class="report-buttons">
-                    <button onclick="copyReport()"
-                        style="background-color:#4CAF50; color:white; margin-top:10px;">📋
-                        Jelentés Másolása</button>
-                    <button onclick="window.location.reload()"
-                        style="background-color:#555; color:white; margin-top:10px;">Újrakezdés</button>
+                    <button onclick="copyReport()" style="background-color:#555; color:white; font-size:0.9em;">Másolás vágólapra (Tartalék)</button>
+                    <button onclick="window.location.reload()" style="background-color:#ff9800; color:white;">Újrakezdés</button>
                 </div>
             </div>
         </div>
 
         <script>
+        // ==========================================================
+        // CONFIG: IDE MÁSOLD BE A KAPOTT GOOGLE SCRIPT LINKET!
+        // ==========================================================
+        const GOOGLE_SCRIPT_URL = "IDE_MASOLD_BE_A_GOOGLE_SCRIPT_LINKET"; 
+        // ==========================================================
+
         // --- JÁTÉK ÁLLAPOT ---
         let studentName = "";
         let startTime;
@@ -256,6 +273,9 @@
         let wrongAnswerCount = 0; 
         let solutionSteps = [];   
         let helpStepIndex = 0;    
+
+        // Adatcsomag a küldéshez
+        let reportDataPackage = null;
 
         // --- MATEMATIKA ---
         function gcd(a, b) { return b === 0 ? a : gcd(b, a % b); }
@@ -303,7 +323,6 @@
 
         // --- SEGÉDFÜGGVÉNYEK ---
         function getSettingsDescription() {
-            // Visszaadja szövegesen az aktuális beállításokat
             const opModeSelect = document.getElementById('op-mode');
             const diffLevelSelect = document.getElementById('diff-level');
             const opCountSelect = document.getElementById('op-count');
@@ -532,7 +551,6 @@
                 correctAnswer: correct.d === 1 ? `${correct.n}` : `${correct.n}/${correct.d}`,
                 isCorrect: false,
                 note: "",
-                // ELMENTJÜK AZ AKTUÁLIS BEÁLLÍTÁSOKAT:
                 settingsDesc: getSettingsDescription()
             };
 
@@ -586,7 +604,7 @@
             }
         }
 
-        // --- RIPORT ---
+        // --- RIPORT ÉS KÜLDÉS ---
         function finishSession() {
             const endTime = new Date();
             const timeDiffMs = endTime - startTime;
@@ -602,51 +620,81 @@
             document.getElementById('game-screen').style.display = 'none';
             document.getElementById('report-screen').style.display = 'block';
 
-            let reportText = `TÖRTMANÓ GYAKORLÁSI JELENTÉS\n`;
-            reportText += `========================================================\n`;
-            reportText += `TANULÓ NEVE: ${studentName}\n`;
-            reportText += `DÁTUM: ${endTime.toLocaleDateString()} ${endTime.toLocaleTimeString()}\n`;
-            reportText += `GYAKORLÁSI IDŐ: kb. ${timeDiffMin} perc\n`;
-            reportText += `MEGOLDOTT FELADATOK: ${totalCount}\n`;
-            reportText += `HELYES VÁLASZOK: ${correctCount}\n`;
-            reportText += `EREDMÉNYESSÉG: ${score}%\n`;
-            reportText += `--------------------------------------------------------\n`;
-            reportText += `HASZNÁLT BEÁLLÍTÁSOK:\n`;
-            uniqueSettings.forEach(setting => {
-                reportText += `• ${setting}\n`;
-            });
-            reportText += `========================================================\n\n`;
-            reportText += `RÉSZLETES NAPLÓ (Konfiguráció | Feladat | Válasz | Eredmény):\n`;
-
+            // 1. Megjelenítendő Szöveg generálása (Backup)
+            let reportText = `TÖRTMANÓ JELENTÉS - ${studentName}\n`;
+            reportText += `Eredmény: ${score}% (${correctCount}/${totalCount})\n`;
+            reportText += `Idő: ${timeDiffMin} perc\n`;
+            reportText += `Beállítások: ${uniqueSettings.join(', ')}\n\n`;
+            reportText += `Részletek:\n`;
             sessionLog.forEach((log, index) => {
                 let status = log.isCorrect ? "✅" : "❌";
-                reportText += `--------------------------------------------------------\n`;
-                reportText += `${index + 1}. [${status}] [${log.settingsDesc}]\n`;
-                reportText += `   Feladat:  ${log.problem}\n`;
-                reportText += `   Válaszod: ${log.userAnswer}\n`;
-                if (!log.isCorrect || log.note) {
-                    reportText += `   Helyes:   ${log.correctAnswer}`;
-                    if(log.note) reportText += ` [Megj.: ${log.note}]`;
-                    reportText += `\n`;
-                }
+                reportText += `${index + 1}. ${status} [${log.settingsDesc}] ${log.problem} = ${log.userAnswer}`;
+                if (!log.isCorrect) reportText += ` (Helyes: ${log.correctAnswer})`;
+                reportText += `\n`;
             });
-            reportText += `\n========================================================\n`;
             
             document.getElementById('report-output').value = reportText;
+
+            // 2. Adatcsomag összeállítása a Google Sheetnek
+            reportDataPackage = {
+                name: studentName,
+                score: score,
+                correct: correctCount,
+                total: totalCount,
+                time: timeDiffMin,
+                settings: uniqueSettings.join(', '),
+                log: reportText
+            };
+
+            // Gomb megjelenítése
+            const btnSend = document.getElementById('btn-send-data');
+            btnSend.style.display = 'block';
+            
+            // Ha nincs beállítva URL, jelezzük
+            if(GOOGLE_SCRIPT_URL === "https://script.google.com/macros/s/AKfycbyer71uMEqAYuE_1LILiGz4q61XTLRImCkl5T7xD0qws6NBgdYyusuwLIYGFLD6YhLgPw/exec") {
+                document.getElementById('status-message').innerHTML = "⚠️ Nincs beállítva a tanári link! Használd a másolást.";
+                document.getElementById('status-message').style.color = "red";
+                btnSend.style.display = 'none';
+            }
+        }
+
+        function sendReportToGoogle() {
+            const btn = document.getElementById('btn-send-data');
+            const statusDiv = document.getElementById('status-message');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading-spinner"></span> Küldés folyamatban...';
+            statusDiv.innerText = "";
+
+            fetch(GOOGLE_SCRIPT_URL, {
+                method: "POST",
+                mode: "no-cors", // Fontos a Google Scripthez
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(reportDataPackage)
+            })
+            .then(response => {
+                // Mivel 'no-cors' módban vagyunk, nem kapunk JSON választ, de ha ide eljut, valószínűleg sikerült.
+                statusDiv.innerHTML = "✅ Sikeresen elküldve! Köszönöm a munkát.";
+                statusDiv.style.color = "green";
+                btn.style.display = 'none'; // Eltüntetjük a gombot
+            })
+            .catch(error => {
+                console.error("Hiba:", error);
+                statusDiv.innerHTML = "❌ Hiba történt a küldéskor. Kérlek másold ki a lenti szöveget és küldd el Teamsen!";
+                statusDiv.style.color = "red";
+                btn.innerHTML = "Újrapróbálkozás";
+                btn.disabled = false;
+            });
         }
         
         function copyReport() {
             const reportOutput = document.getElementById('report-output');
             reportOutput.select();
             reportOutput.setSelectionRange(0, 99999);
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(reportOutput.value)
-                    .then(() => alert("✅ A jelentés szövege a vágólapra került!"))
-                    .catch(() => { document.execCommand("copy"); alert("✅ A jelentés másolva!"); });
-            } else {
-                document.execCommand("copy");
-                alert("✅ A jelentés másolva!");
-            }
+            document.execCommand("copy");
+            alert("✅ A jelentés másolva!");
         }
 
         window.onload = function() {
